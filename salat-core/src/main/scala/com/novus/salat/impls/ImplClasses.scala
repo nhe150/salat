@@ -24,13 +24,13 @@
  */
 package com.novus.salat
 
-import scala.collection.mutable.{ Map => MMap, Set => MSet, Seq => MSeq, IndexedSeq => MIndexedSeq }
+import scala.collection.mutable.{ Map => MMap, Queue => MQueue, Set => MSet, Seq => MSeq, IndexedSeq => MIndexedSeq }
 import scala.collection.mutable.{ Buffer, ArrayBuffer, LinkedList, DoubleLinkedList }
 import scala.tools.scalap.scalax.rules.scalasig._
 import scala.collection.immutable.{ List => IList, Map => IMap, Set => ISet, Seq => ISeq, IndexedSeq => IIndexedSeq }
 
 package object impls {
-  def traversableImpl(name: String, real: collection.Traversable[_]): scala.collection.Traversable[_] = name match {
+  def traversableImpl[T: ClassManifest](name: String, real: collection.Traversable[T]): AnyRef = name match {
 
     case ImplClasses.BufferClass      => Buffer.empty ++ real
     case ImplClasses.ArrayBufferClass => ArrayBuffer.empty ++ real
@@ -53,19 +53,26 @@ package object impls {
 
     case ImplClasses.LinkedList       => LinkedList.empty ++ real
     case ImplClasses.DoubleLinkedList => DoubleLinkedList.empty ++ real
+    case ImplClasses.MQueueClass      => MQueue.empty ++ real
+    case ImplClasses.MArrayClass      => real.toArray
 
     case x                            => sys.error("failed to find proper Traversable[_] impl for %s".format(x))
   }
 
-  def traversableImpl(t: Type, real: scala.collection.Traversable[_]): scala.collection.Traversable[_] =
+  def traversableImpl[T: ClassManifest](t: Type, real: scala.collection.Traversable[T]): AnyRef =
     t match {
-      case TypeRefType(_, symbol, _) => symbol.path match {
-        case "scala.package.Seq"        => traversableImpl(ImplClasses.SeqClass, real)
-        case "scala.package.List"       => traversableImpl(ImplClasses.IListClass, real)
-        case "scala.package.Vector"     => traversableImpl(ImplClasses.VectorClass, real)
-        case "scala.package.IndexedSeq" => traversableImpl(ImplClasses.IndexedSeq, real)
-        case "scala.Predef.Set"         => traversableImpl(ImplClasses.SetClass, real)
-        case x                          => traversableImpl(x, real)
+      case TypeRefType(_, symbol, typeArg) => symbol.path match {
+        case "scala.package.Seq"              => traversableImpl(ImplClasses.SeqClass, real)
+        case "scala.collection.mutable.Queue" => traversableImpl(ImplClasses.MQueueClass, real)
+        case "scala.package.List"             => traversableImpl(ImplClasses.IListClass, real)
+        case "scala.package.Vector"           => traversableImpl(ImplClasses.VectorClass, real)
+        case "scala.package.IndexedSeq"       => traversableImpl(ImplClasses.IndexedSeq, real)
+        case "scala.Predef.Set"               => traversableImpl(ImplClasses.SetClass, real)
+        case "scala.Array"                    => {
+
+          traversableImpl(ImplClasses.MArrayClass, real)
+        }
+        case x                                => traversableImpl(x, real)
       }
     }
 
@@ -111,6 +118,9 @@ package impls {
     val IndexedSeq = classOf[scala.collection.IndexedSeq[_]].getName
     val IIndexedSeq = classOf[IIndexedSeq[_]].getName
     val MIndexedSeq = classOf[MIndexedSeq[_]].getName
+
+    val MQueueClass = classOf[MQueue[_]].getName
+    val MArrayClass = classOf[Array[_]].getName
 
     val LinkedList = classOf[LinkedList[_]].getName
     val DoubleLinkedList = classOf[DoubleLinkedList[_]].getName

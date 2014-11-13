@@ -70,7 +70,8 @@ object BuildSettings {
 
   val buildOrganization = "com.novus"
   val buildVersion = "2.0.0-SNAPSHOT"
-  val buildScalaVersion = "2.11.2"
+  //val buildScalaVersion = "2.11.2"
+  val buildScalaVersion = "2.10.4"
 
   val buildSettings = Defaults.defaultSettings ++ Format.settings ++ Publish.settings ++ Seq(
     organization := buildOrganization,
